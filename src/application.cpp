@@ -1,5 +1,6 @@
 #include "GLFW/glfw3.h"
 #include "core/physicsWorld.h"
+#include "constants.h"
 
 int main(void)
 {
@@ -28,8 +29,8 @@ int main(void)
 
     // set up sim
     PhysicsWorld world;
-    world.AddBody({ 2.0f, 2.0f, 5.0f, 0.0f, 2.0f, 2.0f, 1.0f, ShapeType::RECTANGLE});
-    world.AddBody({ 62.0f, 2.0f, -5.0f, 0.0f, 2.0f, 2.0f, 1.0f, ShapeType::ELLIPSE32 });
+    world.AddBody({ 2.0f, 2.0f, 5.0f, 0.0f, 2.0f, 2.0f, 1.0f, ShapeType::RECTANGLE });
+    world.AddBody({ 62.0f, 2.0f, -5.0f, 0.0f, 2.0f, 2.0f, 1.0f, ShapeType::ELLIPSE });
 
     double lastTime = glfwGetTime(); // get time
 
@@ -41,7 +42,7 @@ int main(void)
         float dt = (float)(currentTime - lastTime) * 3;
         lastTime = currentTime;
 
-        world.Update(dt);
+        world.Update(dt, GRAVITY, VISCOSITY, BOUNDCOR);
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);

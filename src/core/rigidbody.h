@@ -2,7 +2,7 @@
 
 enum class ShapeType {
     RECTANGLE,
-    ELLIPSE32
+    ELLIPSE
 };
 
 struct RigidBody {
@@ -11,4 +11,5 @@ struct RigidBody {
     float width, height;     
     float mass;        
     ShapeType shape;         
+    float detail = 32;
 };

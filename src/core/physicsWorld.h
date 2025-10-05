@@ -12,9 +12,9 @@ public:
         bodies.push_back(body);
     }
 
-    void Update(float dt) {
+    void Update(float dt, float gravity, float viscosity, float boundCor) {
         for (auto& body : bodies) {
-            UpdatePhysics(body, dt, 0.000018, 1.0f);
+            UpdatePhysics(body, dt, gravity, viscosity, boundCor);
         }
 
         for (size_t i = 0; i < bodies.size(); i++) {
@@ -44,10 +44,10 @@ private:
             glVertex2f(body.x - halfWidth, body.y + halfHeight);
             glEnd();
         }
-        else if (body.shape == ShapeType::ELLIPSE32) {
+        else if (body.shape == ShapeType::ELLIPSE) {
             float xRadius = body.width / 2.0f;
             float yRadius = body.height / 2.0f;
-            int segments = 32;
+            int segments = body.detail;
             glBegin(GL_TRIANGLE_FAN);
             glVertex2f(body.x, body.y);
             for (int i = 0; i <= segments; i++) {
@@ -60,8 +60,8 @@ private:
         }
     }
 
-    void UpdatePhysics(RigidBody& body, float dt, float viscosity, float boundCOR) {
-        body.vy += 9.8f * dt;
+    void UpdatePhysics(RigidBody& body, float dt, float gravity, float viscosity, float boundCOR) {
+        body.vy += gravity * dt;
         body.vx -= viscosity * body.vx * body.vx * dt;
         body.vy -= viscosity * body.vy * body.vy * dt;
         body.x += body.vx * dt;

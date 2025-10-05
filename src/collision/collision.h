@@ -40,12 +40,12 @@ bool CheckCollision(const RigidBody& a, const RigidBody& b) {
     if (a.shape == ShapeType::RECTANGLE && b.shape == ShapeType::RECTANGLE) {
         return CheckCollisionRectRect(a, b);
     }
-    else if (a.shape == ShapeType::ELLIPSE32 && b.shape == ShapeType::ELLIPSE32) {
+    else if (a.shape == ShapeType::ELLIPSE && b.shape == ShapeType::ELLIPSE) {
         return CheckCollisionEllipseEllipse(a, b);
     }
-    else if ((a.shape == ShapeType::ELLIPSE32 && b.shape == ShapeType::RECTANGLE) || (a.shape == ShapeType::RECTANGLE && b.shape == ShapeType::ELLIPSE32)) {
+    else if ((a.shape == ShapeType::ELLIPSE && b.shape == ShapeType::RECTANGLE) || (a.shape == ShapeType::RECTANGLE && b.shape == ShapeType::ELLIPSE)) {
         const RigidBody& rect = (a.shape == ShapeType::RECTANGLE) ? a : b;
-        const RigidBody& ellipse = (a.shape == ShapeType::ELLIPSE32) ? a : b;
+        const RigidBody& ellipse = (a.shape == ShapeType::ELLIPSE) ? a : b;
         return CheckCollisionRectEllipse(rect, ellipse);
     }
     return false;
