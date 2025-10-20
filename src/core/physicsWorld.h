@@ -3,6 +3,7 @@
 #include "../collision/collision.h"
 #include <vector>
 #include <GLFW/glfw3.h>
+#include <cmath>
 
 class PhysicsWorld {
 public:
@@ -19,8 +20,9 @@ public:
 
         for (size_t i = 0; i < bodies.size(); i++) {
             for (size_t j = i + 1; j < bodies.size(); j++) {
-                if (CheckCollision(bodies[i], bodies[j])) {
-                    ResolveCollision(bodies[i], bodies[j]);
+                ContactPoint contact;
+                if (CheckCollision(bodies[i], bodies[j], &contact)) {
+                    ResolveCollision(bodies[i], bodies[j], contact, 0.8f);
                 }
             }
         }
@@ -34,14 +36,18 @@ public:
 
 private:
     void RenderBody(const RigidBody& body) {
+        glPushMatrix();
+        glTranslatef(body.x, body.y, 0.0f);
+        glRotatef(body.angle * 180.0f / 3.14159265f, 0.0f, 0.0f, 1.0f);
+        
         if (body.shape == ShapeType::RECTANGLE) {
             float halfWidth = body.width / 2.0f;
             float halfHeight = body.height / 2.0f;
             glBegin(GL_QUADS);
-            glVertex2f(body.x - halfWidth, body.y - halfHeight);
-            glVertex2f(body.x + halfWidth, body.y - halfHeight);
-            glVertex2f(body.x + halfWidth, body.y + halfHeight);
-            glVertex2f(body.x - halfWidth, body.y + halfHeight);
+            glVertex2f(-halfWidth, -halfHeight);
+            glVertex2f(halfWidth, -halfHeight);
+            glVertex2f(halfWidth, halfHeight);
+            glVertex2f(-halfWidth, halfHeight);
             glEnd();
         }
         else if (body.shape == ShapeType::ELLIPSE) {
@@ -49,41 +55,57 @@ private:
             float yRadius = body.height / 2.0f;
             int segments = body.detail;
             glBegin(GL_TRIANGLE_FAN);
-            glVertex2f(body.x, body.y);
+            glVertex2f(0.0f, 0.0f);
             for (int i = 0; i <= segments; i++) {
                 float theta = 2.0f * 3.1415926f * float(i) / float(segments);
                 float dx = xRadius * cosf(theta);
                 float dy = yRadius * sinf(theta);
-                glVertex2f(body.x + dx, body.y + dy);
+                glVertex2f(dx, dy);
             }
             glEnd();
         }
+        
+        glPopMatrix();
     }
 
     void UpdatePhysics(RigidBody& body, float dt, float gravity, float viscosity, float boundCOR) {
         body.vy += gravity * dt;
-        body.vx -= viscosity * body.vx * body.vx * dt;
-        body.vy -= viscosity * body.vy * body.vy * dt;
+        
+        float dragFactor = 1.0f - viscosity * dt;
+        if (dragFactor < 0.0f) dragFactor = 0.0f;
+        body.vx *= dragFactor;
+        body.vy *= dragFactor;
+        
+        body.angularVelocity *= dragFactor;
+        
         body.x += body.vx * dt;
         body.y += body.vy * dt;
-
-        if (body.y + body.height / 2 >= 48) {
+        body.angle += body.angularVelocity * dt;
+        
+        float halfWidth = body.width / 2.0f;
+        float halfHeight = body.height / 2.0f;
+        
+        float boundingRadius = sqrtf(halfWidth * halfWidth + halfHeight * halfHeight);
+        
+        if (body.y + boundingRadius >= 48) {
             body.vy *= -boundCOR;
-            body.y = 48 - body.height / 2;
+            body.angularVelocity *= boundCOR;
+            body.y = 48 - boundingRadius;
         }
-        if (body.y - body.height / 2 <= 0) {
+        if (body.y - boundingRadius <= 0) {
             body.vy *= -boundCOR;
-            body.y = body.height / 2;
+            body.angularVelocity *= boundCOR;
+            body.y = boundingRadius;
         }
-        if (body.x + body.width / 2 >= 64) {
+        if (body.x + boundingRadius >= 64) {
             body.vx *= -boundCOR;
-            body.x = 64 - body.width / 2;
+            body.angularVelocity *= boundCOR;
+            body.x = 64 - boundingRadius;
         }
-        if (body.x - body.width / 2 <= 0) {
+        if (body.x - boundingRadius <= 0) {
             body.vx *= -boundCOR;
-            body.x = body.width / 2;
+            body.angularVelocity *= boundCOR;
+            body.x = boundingRadius;
         }
     }
-
-
 };
