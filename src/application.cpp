@@ -1,6 +1,7 @@
 #include "GLFW/glfw3.h"
 #include "core/physicsWorld.h"
 #include "constants.h"
+#include "util/textRenderer.h"
 
 int main(void)
 {
@@ -21,10 +22,11 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
-    // change coords to set top left = 0,0 bottom right = 640,480
+    // change coords to set top left = 0,0 bottom right = 64,48
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0.0, 64.0, 48.0, 0.0, -1.0, 1.0);
+ 
+    glOrtho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, -1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
 
     PhysicsWorld world;
@@ -54,12 +56,19 @@ int main(void)
         float dt = (float)(currentTime - lastTime) * 3;
         lastTime = currentTime;
 
-        world.Update(dt, GRAVITY, VISCOSITY, BOUNDCOR);
+        world.Update(dt, GRAVITY, VISCOSITY, BOUND_COR);
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
         world.Render();
+
+        float totalEnergy = world.CalculateTotalEnergy(GRAVITY);
+
+        glColor3f(1.0f, 1.0f, 1.0f);
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "Energy: %.2f J", totalEnergy);
+        RenderText(buffer, 1.0f, 1.0f, 0.15f);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

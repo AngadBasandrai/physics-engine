@@ -22,7 +22,7 @@ public:
             for (size_t j = i + 1; j < bodies.size(); j++) {
                 ContactPoint contact;
                 if (CheckCollision(bodies[i], bodies[j], &contact)) {
-                    ResolveCollision(bodies[i], bodies[j], contact, 0.8f);
+                    ResolveCollision(bodies[i], bodies[j], contact, 1.0f);
                 }
             }
         }
@@ -33,6 +33,22 @@ public:
             RenderBody(body);
         }
     }
+
+float CalculateTotalEnergy(float gravity) {
+    float totalEnergy = 0.0f;
+    for (const auto& body : bodies) {
+        float vSquared = body.vx * body.vx + body.vy * body.vy;
+        float kineticEnergy = 0.5f * body.mass * vSquared;
+        
+        float rotationalEnergy = 0.5f * body.momentOfInertia * body.angularVelocity * body.angularVelocity;
+        
+        float height = 48.0f - body.y;
+        float potentialEnergy = body.mass * gravity * height;
+        
+        totalEnergy += kineticEnergy + rotationalEnergy + potentialEnergy;
+    }
+    return totalEnergy;
+}
 
 private:
     void RenderBody(const RigidBody& body) {
@@ -68,44 +84,33 @@ private:
         glPopMatrix();
     }
 
-    void UpdatePhysics(RigidBody& body, float dt, float gravity, float viscosity, float boundCOR) {
+    void UpdatePhysics(RigidBody& body, float dt, float gravity, float viscosity, float boundCor) {
+        body.vx *= (1.0f - viscosity);
+        body.vy *= (1.0f - viscosity);
+        body.angularVelocity *= (1.0f - viscosity);
+        
         body.vy += gravity * dt;
-        
-        float dragFactor = 1.0f - viscosity * dt;
-        if (dragFactor < 0.0f) dragFactor = 0.0f;
-        body.vx *= dragFactor;
-        body.vy *= dragFactor;
-        
-        body.angularVelocity *= dragFactor;
         
         body.x += body.vx * dt;
         body.y += body.vy * dt;
         body.angle += body.angularVelocity * dt;
-        
-        float halfWidth = body.width / 2.0f;
-        float halfHeight = body.height / 2.0f;
-        
-        float boundingRadius = sqrtf(halfWidth * halfWidth + halfHeight * halfHeight);
-        
-        if (body.y + boundingRadius >= 48) {
-            body.vy *= -boundCOR;
-            body.angularVelocity *= boundCOR;
-            body.y = 48 - boundingRadius;
+
+        if (body.y + body.height / 2.0f >= SCREEN_HEIGHT) {
+            body.y = SCREEN_HEIGHT - body.height / 2.0f;
+            body.vy = -body.vy * boundCor;
         }
-        if (body.y - boundingRadius <= 0) {
-            body.vy *= -boundCOR;
-            body.angularVelocity *= boundCOR;
-            body.y = boundingRadius;
+        if (body.x - body.width / 2.0f <= 0.0f) {
+            body.x = body.width / 2.0f;
+            body.vx = -body.vx * boundCor;
         }
-        if (body.x + boundingRadius >= 64) {
-            body.vx *= -boundCOR;
-            body.angularVelocity *= boundCOR;
-            body.x = 64 - boundingRadius;
+        if (body.x + body.width / 2.0f >= SCREEN_WIDTH) {
+            body.x = SCREEN_WIDTH - body.width / 2.0f;
+            body.vx = -body.vx * boundCor;
         }
-        if (body.x - boundingRadius <= 0) {
-            body.vx *= -boundCOR;
-            body.angularVelocity *= boundCOR;
-            body.x = boundingRadius;
+        if (body.y - body.height / 2.0f <= 0.0f) {
+            body.y = body.height / 2.0f;
+            body.vy = -body.vy * boundCor;
         }
     }
+
 };

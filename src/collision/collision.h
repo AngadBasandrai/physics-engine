@@ -1,5 +1,6 @@
 #pragma once
 #include "../core/rigidbody.h"
+#include "../constants.h"
 #include <cmath>
 #include <vector>
 
@@ -214,59 +215,69 @@ bool CheckCollision(const RigidBody& a, const RigidBody& b, ContactPoint* contac
     return false;
 }
 
-void ResolveCollision(RigidBody& a, RigidBody& b, const ContactPoint& contact, float e = 1.0f) {
+void ResolveCollision(RigidBody& a, RigidBody& b, const ContactPoint& contact, float e) {
     float nx = contact.nx;
     float ny = contact.ny;
     float rax = contact.x - a.x;
     float ray = contact.y - a.y;
     float rbx = contact.x - b.x;
     float rby = contact.y - b.y;
+
     float vax = a.vx - a.angularVelocity * ray;
     float vay = a.vy + a.angularVelocity * rax;
     float vbx = b.vx - b.angularVelocity * rby;
     float vby = b.vy + b.angularVelocity * rbx;
     float rvx = vbx - vax;
-    float rvy = vby - vay;    
-    // Relative velocity along normal
+    float rvy = vby - vay;
+
     float velAlongNormal = rvx * nx + rvy * ny;
-    
-    // If objects are separating, no impulse
     if (velAlongNormal > 0) return;
-    
+
     float invMassA = (a.mass > 0) ? 1.0f / a.mass : 0.0f;
     float invMassB = (b.mass > 0) ? 1.0f / b.mass : 0.0f;
     float invInertiaA = (a.momentOfInertia > 0) ? 1.0f / a.momentOfInertia : 0.0f;
     float invInertiaB = (b.momentOfInertia > 0) ? 1.0f / b.momentOfInertia : 0.0f;
-    
+
     float raCrossN = rax * ny - ray * nx;
     float rbCrossN = rbx * ny - rby * nx;
-    
-    float denominator = invMassA + invMassB + 
-                       raCrossN * raCrossN * invInertiaA + 
-                       rbCrossN * rbCrossN * invInertiaB;
-    
+    float denominator = invMassA + invMassB + raCrossN * raCrossN * invInertiaA + rbCrossN * rbCrossN * invInertiaB;
+
     float j = -(1.0f + e) * velAlongNormal / denominator;
-    
     float impulseX = j * nx;
     float impulseY = j * ny;
-    
+
     a.vx -= impulseX * invMassA;
     a.vy -= impulseY * invMassA;
     b.vx += impulseX * invMassB;
     b.vy += impulseY * invMassB;
-    
     a.angularVelocity -= (rax * impulseY - ray * impulseX) * invInertiaA;
     b.angularVelocity += (rbx * impulseY - rby * impulseX) * invInertiaB;
-    
-    // Positional correction to prevent sinking
-    const float percent = 0.2f; // Penetration percentage to correct
-    const float slop = 0.01f;   // Penetration allowance
-    float correctionMag = fmaxf(contact.penetration - slop, 0.0f) / (invMassA + invMassB) * percent;
-    float correctionX = correctionMag * nx;
-    float correctionY = correctionMag * ny;
-    
-    a.x -= correctionX * invMassA;
-    a.y -= correctionY * invMassA;
-    b.x += correctionX * invMassB;
-    b.y += correctionY * invMassB;
+
+    if (STATIC_FRICTION > 0 || DYNAMIC_FRICTION > 0) {
+        float tx = -ny;
+        float ty = nx;
+        float velAlongTangent = rvx * tx + rvy * ty;
+
+        float raCrossT = rax * ty - ray * tx;
+        float rbCrossT = rbx * ty - rby * tx;
+        float tangentDenom = invMassA + invMassB + raCrossT * raCrossT * invInertiaA + rbCrossT * rbCrossT * invInertiaB;
+
+        float jt = -velAlongTangent / tangentDenom;
+
+        float frictionImpulse;
+        if (fabs(jt) < j * STATIC_FRICTION)
+            frictionImpulse = jt;
+        else
+            frictionImpulse = -j * DYNAMIC_FRICTION * ((jt < 0) ? -1.0f : 1.0f);
+
+        float frictionX = frictionImpulse * tx;
+        float frictionY = frictionImpulse * ty;
+
+        a.vx -= frictionX * invMassA;
+        a.vy -= frictionY * invMassA;
+        b.vx += frictionX * invMassB;
+        b.vy += frictionY * invMassB;
+        a.angularVelocity -= (rax * frictionY - ray * frictionX) * invInertiaA;
+        b.angularVelocity += (rbx * frictionY - rby * frictionX) * invInertiaB;
+    }
 }
