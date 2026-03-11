@@ -1,7 +1,7 @@
 #define GRAVITY 9.8f
-#define VISCOSITY 0.0f
+#define DRAG_COEFF 0.0f
 #define BOUND_COR 1.f
 #define STATIC_FRICTION 0.0f
 #define DYNAMIC_FRICTION 0.0f
-#define SCREEN_WIDTH 64.0f
-#define SCREEN_HEIGHT 48.0f
+#define SCREEN_WIDTH 128.0f
+#define SCREEN_HEIGHT 72.0f

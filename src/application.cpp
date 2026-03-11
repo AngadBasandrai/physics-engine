@@ -14,7 +14,7 @@ int main(void)
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Physics Engine", NULL, NULL);
+    window = glfwCreateWindow(1280, 720, "Physics Engine", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -33,15 +33,18 @@ int main(void)
 
     PhysicsWorld world;
     
-    RigidBody rect1(31.0f, 23.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, ShapeType::ELLIPSE, 32.0f, .0f, true);
+    RectangularBody rect1(64.0f, 35.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, 32.0f, .0f, false);
+    rect1.bodyType = 1;
     int r1Id = world.AddBody(rect1);
     
-    RigidBody rect2(35.0f, 28.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, ShapeType::ELLIPSE, 32.0f, 1.0f, false);
+    RectangularBody rect2(68.0f, 40.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, 32.0f, .0f, false);
+    rect2.bodyType = 1;
     int r2Id = world.AddBody(rect2);
 
     double lastTime = glfwGetTime(); // get time
 
     double clock = 0;
+    int frames = 0;
 
     bool jointed = false;
 
@@ -49,17 +52,18 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
 
+        frames+=1;
         double currentTime = glfwGetTime();
-        float dt = (float)(currentTime - lastTime) * 3;
+        float dt = (float)(currentTime - lastTime);
         lastTime = currentTime;
-        clock += (dt/3);
+        clock += dt;
 
         if (!jointed && clock > 1.0f){
-            DistanceJoint joint(5.0f, 1.0f, r1Id, r2Id, true, &world);
+            DistanceJoint joint(5.0f, 1.0f, r1Id, r2Id, false, &world);
             world.AddDistanceJoint(joint);
         }
 
-        world.Update(dt, GRAVITY, VISCOSITY, BOUND_COR);
+        world.Update(dt, GRAVITY, DRAG_COEFF, BOUND_COR);
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -71,7 +75,18 @@ int main(void)
         glColor3f(1.0f, 1.0f, 1.0f);
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "Energy: %.2f J", totalEnergy);
-        RenderText(buffer, 1.0f, 1.0f, 0.15f);
+        RenderText(buffer, 51.0f, 1.0f, 0.15f);
+
+        glColor3f(1.0f, 1.0f, 1.0f);
+        char fps[64];
+        snprintf(fps, sizeof(fps), "%6.2f FPS", frames/clock);
+        RenderText(fps, 1.0f, 1.0f, 0.15f);
+
+        glColor3f(1.0f, 1.0f, 1.0f);
+        char clockbuffer[64];
+        snprintf(clockbuffer, sizeof(clockbuffer), "Engine clock: %.2f", clock);
+        RenderText(clockbuffer, 101.0f, 1.0f, 0.15f);
+
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

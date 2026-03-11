@@ -13,7 +13,7 @@ endif
 CXX = g++
 CXXFLAGS = -IDependencies/GLFW/include
 LDFLAGS = -LDependencies/GLFW/lib $(LIBS)
-SOURCES = src/application.cpp src/core/physicsWorld.cpp src/core/joints/distanceJoint.cpp src/collision/collision.cpp
+SOURCES = src/application.cpp src/core/physicsWorld.cpp src/core/joints/distanceJoint.cpp src/collision/collision.cpp src/core/rigidbody.cpp
 
 all: build run
 

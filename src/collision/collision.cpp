@@ -185,20 +185,20 @@ bool CheckCollisionRectEllipse(const RigidBody& rect, const RigidBody& ellipse, 
 }
 
 bool CheckCollision(const RigidBody& a, const RigidBody& b, ContactPoint* contact) {
-    if (a.shape == ShapeType::RECTANGLE && b.shape == ShapeType::RECTANGLE) {
+    if (a.bodyType == 1 && b.bodyType == 1) {
         return CheckCollisionRectRect(a, b, contact);
     }
-    else if (a.shape == ShapeType::ELLIPSE && b.shape == ShapeType::ELLIPSE) {
+    else if (a.bodyType == 2 && b.bodyType == 2) {
         return CheckCollisionEllipseEllipse(a, b, contact);
     }
-    else if ((a.shape == ShapeType::ELLIPSE && b.shape == ShapeType::RECTANGLE) || 
-             (a.shape == ShapeType::RECTANGLE && b.shape == ShapeType::ELLIPSE)) {
-        const RigidBody& rect = (a.shape == ShapeType::RECTANGLE) ? a : b;
-        const RigidBody& ellipse = (a.shape == ShapeType::ELLIPSE) ? a : b;
+    else if ((a.bodyType == 1 && b.bodyType == 2) || 
+             (a.bodyType == 2 && b.bodyType == 1)) {
+        const RigidBody& rect = (a.bodyType == 1) ? a : b;
+        const RigidBody& ellipse = (a.bodyType == 2) ? a : b;
         bool result = CheckCollisionRectEllipse(rect, ellipse, contact);
         
         // Flip normal if order was reversed
-        if (contact && a.shape == ShapeType::ELLIPSE) {
+        if (contact && a.bodyType == 2) {
             contact->nx = -contact->nx;
             contact->ny = -contact->ny;
         }
