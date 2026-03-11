@@ -1,7 +1,9 @@
 #include "GLFW/glfw3.h"
 #include "core/physicsWorld.h"
+#include "core/joints/distanceJoint.h"
 #include "constants.h"
 #include "util/textRenderer.h"
+#include <cstdio>
 
 int main(void)
 {
@@ -31,22 +33,17 @@ int main(void)
 
     PhysicsWorld world;
     
-    RigidBody rect1(10.0f, 2.0f, 5.0f, 0.0f, 3.0f, 3.0f, 1.0f, ShapeType::RECTANGLE);
-    rect1.angularVelocity = 1.0f; 
-    world.AddBody(rect1);
+    RigidBody rect1(31.0f, 23.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, ShapeType::ELLIPSE, 32.0f, .0f, true);
+    int r1Id = world.AddBody(rect1);
     
-    RigidBody rect2(54.0f, 2.0f, -5.0f, 0.0f, 4.0f, 2.5f, 1.0f, ShapeType::RECTANGLE);
-    rect2.angularVelocity = -1.0f;
-    world.AddBody(rect2);
-    
-    RigidBody ellipse1(32.0f, 5.0f, 0.0f, 0.0f, 3.0f, 1.5f, 1.0f, ShapeType::ELLIPSE);
-    ellipse1.angularVelocity = .4f; 
-    world.AddBody(ellipse1);
-    
-    RigidBody ellipse2(20.0f, 10.0f, 3.0f, 2.0f, 2.0f, 2.0f, 0.8f, ShapeType::ELLIPSE);
-    world.AddBody(ellipse2);
+    RigidBody rect2(35.0f, 28.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, ShapeType::ELLIPSE, 32.0f, 1.0f, false);
+    int r2Id = world.AddBody(rect2);
 
     double lastTime = glfwGetTime(); // get time
+
+    double clock = 0;
+
+    bool jointed = false;
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -55,6 +52,12 @@ int main(void)
         double currentTime = glfwGetTime();
         float dt = (float)(currentTime - lastTime) * 3;
         lastTime = currentTime;
+        clock += (dt/3);
+
+        if (!jointed && clock > 1.0f){
+            DistanceJoint joint(5.0f, 1.0f, r1Id, r2Id, true, &world);
+            world.AddDistanceJoint(joint);
+        }
 
         world.Update(dt, GRAVITY, VISCOSITY, BOUND_COR);
 

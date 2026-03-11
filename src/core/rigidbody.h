@@ -14,14 +14,17 @@ struct RigidBody {
     float detail = 32;
     float angle = 0.0f;           
     float angularVelocity = 0.0f;
-    float momentOfInertia;       
+    float momentOfInertia;
+    int id; 
+    int gravityScale;
+    bool anchor;
     
     RigidBody() : momentOfInertia(0.0f) {}
     
     RigidBody(float x, float y, float vx, float vy, float width, float height, 
-              float mass, ShapeType shape, float detail = 32)
+              float mass, ShapeType shape, float detail = 32, int gravityScale = 1, bool anchor = false)
         : x(x), y(y), vx(vx), vy(vy), width(width), height(height), 
-          mass(mass), shape(shape), detail(detail), angle(0.0f), angularVelocity(0.0f) {
+          mass(mass), shape(shape), detail(detail), angle(0.0f), angularVelocity(0.0f), gravityScale(gravityScale){
         CalculateMomentOfInertia();
     }
     

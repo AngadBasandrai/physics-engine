@@ -13,6 +13,7 @@ endif
 CXX = g++
 CXXFLAGS = -IDependencies/GLFW/include
 LDFLAGS = -LDependencies/GLFW/lib $(LIBS)
+SOURCES = src/application.cpp src/core/physicsWorld.cpp src/core/joints/distanceJoint.cpp src/collision/collision.cpp
 
 all: build run
 
@@ -20,7 +21,7 @@ clean:
 	$(RM) $(EXE)
 
 build:
-	$(CXX) src/application.cpp $(CXXFLAGS) $(LDFLAGS) -o $(EXE)
+	$(CXX) $(SOURCES) $(CXXFLAGS) $(LDFLAGS) -o $(EXE)
 
 run:
 	$(RUN)
