@@ -1,6 +1,7 @@
 #include "collision.h"
 #include <cmath>
 #include <vector>
+#include "../core/structures/structures.h"
 
 void RotatePoint(float& px, float& py, float angle) {
     float c = cosf(angle);
@@ -12,8 +13,8 @@ void RotatePoint(float& px, float& py, float angle) {
 }
 
 void GetRectCorners(const RigidBody& rect, float corners[4][2]) {
-    float halfW = rect.width / 2.0f;
-    float halfH = rect.height / 2.0f;
+    float halfW = rect.dimensions.x / 2.0f;
+    float halfH = rect.dimensions.y / 2.0f;
     
     corners[0][0] = -halfW; corners[0][1] = -halfH;
     corners[1][0] =  halfW; corners[1][1] = -halfH;
@@ -22,8 +23,8 @@ void GetRectCorners(const RigidBody& rect, float corners[4][2]) {
     
     for (int i = 0; i < 4; i++) {
         RotatePoint(corners[i][0], corners[i][1], rect.angle);
-        corners[i][0] += rect.x;
-        corners[i][1] += rect.y;
+        corners[i][0] += rect.pos.x;
+        corners[i][1] += rect.pos.y;
     }
 }
 
@@ -73,8 +74,8 @@ bool CheckCollisionRectRect(const RigidBody& a, const RigidBody& b, ContactPoint
     }
     
     if (contact) {
-        float dx = b.x - a.x;
-        float dy = b.y - a.y;
+        float dx = b.pos.x - a.pos.x;
+        float dy = b.pos.y - a.pos.y;
         if (dx * bestAxisX + dy * bestAxisY < 0) {
             bestAxisX = -bestAxisX;
             bestAxisY = -bestAxisY;
@@ -83,16 +84,16 @@ bool CheckCollisionRectRect(const RigidBody& a, const RigidBody& b, ContactPoint
         contact->nx = bestAxisX;
         contact->ny = bestAxisY;
         contact->penetration = minOverlap;
-        contact->x = (a.x + b.x) / 2.0f;
-        contact->y = (a.y + b.y) / 2.0f;
+        contact->x = (a.pos.x + b.pos.x) / 2.0f;
+        contact->y = (a.pos.y + b.pos.y) / 2.0f;
     }
     
     return true;
 }
 
 bool CheckCollisionEllipseEllipse(const RigidBody& a, const RigidBody& b, ContactPoint* contact) {
-    float dx = b.x - a.x;
-    float dy = b.y - a.y;
+    float dx = b.pos.x - a.pos.x;
+    float dy = b.pos.y - a.pos.y;
     
     float ca = cosf(-a.angle);
     float sa = sinf(-a.angle);
@@ -101,10 +102,10 @@ bool CheckCollisionEllipseEllipse(const RigidBody& a, const RigidBody& b, Contac
     
     float relativeAngle = b.angle - a.angle;
     
-    float ax = a.width / 2.0f;
-    float ay = a.height / 2.0f;
-    float bx = b.width / 2.0f;
-    float by = b.height / 2.0f;
+    float ax = a.dimensions.x / 2.0f;
+    float ay = a.dimensions.y / 2.0f;
+    float bx = b.dimensions.x / 2.0f;
+    float by = b.dimensions.y / 2.0f;
     
     float dist = sqrtf(localBx * localBx + localBy * localBy);
     
@@ -122,8 +123,8 @@ bool CheckCollisionEllipseEllipse(const RigidBody& a, const RigidBody& b, Contac
             contact->nx = localNx * ca + localNy * sa;
             contact->ny = -localNx * sa + localNy * ca;
             contact->penetration = radiusA + radiusB - dist;
-            contact->x = a.x + contact->nx * radiusA;
-            contact->y = a.y + contact->ny * radiusA;
+            contact->x = a.pos.x + contact->nx * radiusA;
+            contact->y = a.pos.y + contact->ny * radiusA;
         }
         return true;
     }
@@ -131,8 +132,8 @@ bool CheckCollisionEllipseEllipse(const RigidBody& a, const RigidBody& b, Contac
 }
 
 bool CheckCollisionRectEllipse(const RigidBody& rect, const RigidBody& ellipse, ContactPoint* contact) {
-    float localX = ellipse.x - rect.x;
-    float localY = ellipse.y - rect.y;
+    float localX = ellipse.pos.x - rect.pos.x;
+    float localY = ellipse.pos.y - rect.pos.y;
     
     float c = cosf(-rect.angle);
     float s = sinf(-rect.angle);
@@ -141,8 +142,8 @@ bool CheckCollisionRectEllipse(const RigidBody& rect, const RigidBody& ellipse, 
     
     float relativeAngle = ellipse.angle - rect.angle;
     
-    float halfWidth = rect.width / 2.0f;
-    float halfHeight = rect.height / 2.0f;
+    float halfWidth = rect.dimensions.x / 2.0f;
+    float halfHeight = rect.dimensions.y / 2.0f;
     
     float closestX = fmaxf(-halfWidth, fminf(rotatedX, halfWidth));
     float closestY = fmaxf(-halfHeight, fminf(rotatedY, halfHeight));
@@ -155,8 +156,8 @@ bool CheckCollisionRectEllipse(const RigidBody& rect, const RigidBody& ellipse, 
     float ellipseLocalX = dx * ce - dy * se;
     float ellipseLocalY = dx * se + dy * ce;
     
-    float radiusX = ellipse.width / 2.0f;
-    float radiusY = ellipse.height / 2.0f;
+    float radiusX = ellipse.dimensions.x / 2.0f;
+    float radiusY = ellipse.dimensions.y / 2.0f;
     
     bool collision = ((ellipseLocalX * ellipseLocalX) / (radiusX * radiusX) + 
                      (ellipseLocalY * ellipseLocalY) / (radiusY * radiusY)) <= 1.0f;
@@ -176,8 +177,8 @@ bool CheckCollisionRectEllipse(const RigidBody& rect, const RigidBody& ellipse, 
                       (radiusX * se * ellipseLocalY / radiusY) * (radiusX * se * ellipseLocalY / radiusY) + 0.0001f);
             contact->penetration = ellipseRadiusInDir - dist;
             
-            contact->x = closestX * c + closestY * s + rect.x;
-            contact->y = -closestX * s + closestY * c + rect.y;
+            contact->x = closestX * c + closestY * s + rect.pos.x;
+            contact->y = -closestX * s + closestY * c + rect.pos.y;
         }
     }
     
@@ -210,15 +211,15 @@ bool CheckCollision(const RigidBody& a, const RigidBody& b, ContactPoint* contac
 void ResolveCollision(RigidBody& a, RigidBody& b, const ContactPoint& contact, float e) {
     float nx = contact.nx;
     float ny = contact.ny;
-    float rax = contact.x - a.x;
-    float ray = contact.y - a.y;
-    float rbx = contact.x - b.x;
-    float rby = contact.y - b.y;
+    float rax = contact.x - a.pos.x;
+    float ray = contact.y - a.pos.y;
+    float rbx = contact.x - b.pos.x;
+    float rby = contact.y - b.pos.y;
 
-    float vax = a.vx - a.angularVelocity * ray;
-    float vay = a.vy + a.angularVelocity * rax;
-    float vbx = b.vx - b.angularVelocity * rby;
-    float vby = b.vy + b.angularVelocity * rbx;
+    float vax = a.vel.x - a.angularVelocity * ray;
+    float vay = a.vel.y + a.angularVelocity * rax;
+    float vbx = b.vel.x - b.angularVelocity * rby;
+    float vby = b.vel.y + b.angularVelocity * rbx;
     float rvx = vbx - vax;
     float rvy = vby - vay;
 
@@ -238,10 +239,10 @@ void ResolveCollision(RigidBody& a, RigidBody& b, const ContactPoint& contact, f
     float impulseX = j * nx;
     float impulseY = j * ny;
 
-    a.vx -= impulseX * invMassA;
-    a.vy -= impulseY * invMassA;
-    b.vx += impulseX * invMassB;
-    b.vy += impulseY * invMassB;
+    a.vel.x -= impulseX * invMassA;
+    a.vel.y -= impulseY * invMassA;
+    b.vel.x += impulseX * invMassB;
+    b.vel.y += impulseY * invMassB;
     a.angularVelocity -= (rax * impulseY - ray * impulseX) * invInertiaA;
     b.angularVelocity += (rbx * impulseY - rby * impulseX) * invInertiaB;
 
@@ -265,10 +266,10 @@ void ResolveCollision(RigidBody& a, RigidBody& b, const ContactPoint& contact, f
         float frictionX = frictionImpulse * tx;
         float frictionY = frictionImpulse * ty;
 
-        a.vx -= frictionX * invMassA;
-        a.vy -= frictionY * invMassA;
-        b.vx += frictionX * invMassB;
-        b.vy += frictionY * invMassB;
+        a.vel.x -= frictionX * invMassA;
+        a.vel.y -= frictionY * invMassA;
+        b.vel.x += frictionX * invMassB;
+        b.vel.y += frictionY * invMassB;
         a.angularVelocity -= (rax * frictionY - ray * frictionX) * invInertiaA;
         b.angularVelocity += (rbx * frictionY - rby * frictionX) * invInertiaB;
     }

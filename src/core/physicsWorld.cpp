@@ -45,28 +45,23 @@ void PhysicsWorld::SetAnchor(int id, bool anchor){
 
 float PhysicsWorld::CalculateTotalEnergy(float gravity) {
     float totalEnergy = 0.0f;
-    for (const auto& body : bodies) {
-        float vSquared = body.vx * body.vx + body.vy * body.vy;
-        float kineticEnergy = 0.5f * body.mass * vSquared;
-        
-        float rotationalEnergy = 0.5f * body.momentOfInertia * body.angularVelocity * body.angularVelocity;
-        
-        float height = 48.0f - body.y;
-        float potentialEnergy = body.mass * gravity * height;
-        
-        totalEnergy += kineticEnergy + rotationalEnergy + potentialEnergy;
+    for (auto& body : bodies) {
+        totalEnergy += body.calculateEnergy(gravity);
+    }
+    for (auto& joint : distanceJoints){
+        totalEnergy += joint.calculateEnergy(bodies[joint.bodyAId].pos, bodies[joint.bodyBId].pos);
     }
     return totalEnergy;
 }
 
 void PhysicsWorld::RenderBody(const RigidBody& body) {
     glPushMatrix();
-    glTranslatef(body.x, body.y, 0.0f);
+    glTranslatef(body.pos.x, body.pos.y, 0.0f);
     glRotatef(body.angle * 180.0f / 3.14159265f, 0.0f, 0.0f, 1.0f);
     
     if (body.bodyType == 1) {
-        float halfWidth = body.width / 2.0f;
-        float halfHeight = body.height / 2.0f;
+        float halfWidth = body.dimensions.x / 2.0f;
+        float halfHeight = body.dimensions.y / 2.0f;
         glBegin(GL_QUADS);
         glVertex2f(-halfWidth, -halfHeight);
         glVertex2f(halfWidth, -halfHeight);
@@ -75,8 +70,8 @@ void PhysicsWorld::RenderBody(const RigidBody& body) {
         glEnd();
     }
     else if (body.bodyType == 2) {
-        float xRadius = body.width / 2.0f;
-        float yRadius = body.height / 2.0f;
+        float xRadius = body.dimensions.x / 2.0f;
+        float yRadius = body.dimensions.y / 2.0f;
         int segments = body.detail;
         glBegin(GL_TRIANGLE_FAN);
         glVertex2f(0.0f, 0.0f);
@@ -93,40 +88,40 @@ void PhysicsWorld::RenderBody(const RigidBody& body) {
 }
 
 void PhysicsWorld::UpdatePhysics(RigidBody& body, float dt, float gravity, float dragCoeff, float boundCor) {
-    body.vy += gravity * dt * body.gravityScale;
-    body.vy -= dragCoeff*body.vy*dt/body.mass;
-    body.vx -= dragCoeff*body.vx*dt/body.mass;
+    body.vel.y += gravity * dt * body.gravityScale;
+    body.vel.y -= dragCoeff*body.vel.y*dt/body.mass;
+    body.vel.x -= dragCoeff*body.vel.x*dt/body.mass;
 
     if (!body.anchor)
     {
-        body.x += body.vx * dt;
-        body.y += body.vy * dt;
+        body.pos.x += body.vel.x * dt;
+        body.pos.y += body.vel.y * dt;
         body.angle += body.angularVelocity * dt;
     }
 
-    if (body.y + body.height / 2.0f >= SCREEN_HEIGHT) {
-        body.y = SCREEN_HEIGHT - body.height / 2.0f;
-        body.vy = -body.vy * boundCor;
+    if (body.pos.y + body.dimensions.y / 2.0f >= SCREEN_HEIGHT) {
+        body.pos.y = SCREEN_HEIGHT - body.dimensions.y / 2.0f;
+        body.vel.y = -body.vel.y * boundCor;
     }
-    if (body.x - body.width / 2.0f <= 0.0f) {
-        body.x = body.width / 2.0f;
-        body.vx = -body.vx * boundCor;
+    if (body.pos.x - body.dimensions.x / 2.0f <= 0.0f) {
+        body.pos.x = body.dimensions.x / 2.0f;
+        body.vel.x = -body.vel.x * boundCor;
     }
-    if (body.x + body.width / 2.0f >= SCREEN_WIDTH) {
-        body.x = SCREEN_WIDTH - body.width / 2.0f;
-        body.vx = -body.vx * boundCor;
+    if (body.pos.x + body.dimensions.x / 2.0f >= SCREEN_WIDTH) {
+        body.pos.x = SCREEN_WIDTH - body.dimensions.x / 2.0f;
+        body.vel.x = -body.vel.x * boundCor;
     }
-    if (body.y - body.height / 2.0f <= 0.0f) {
-        body.y = body.height / 2.0f;
-        body.vy = -body.vy * boundCor;
+    if (body.pos.y - body.dimensions.y / 2.0f <= 0.0f) {
+        body.pos.y = body.dimensions.y / 2.0f;
+        body.vel.y = -body.vel.y * boundCor;
     }
 }
 
 void PhysicsWorld::UpdateDistanceJoint(DistanceJoint& joint, float dt){
     RigidBody& bodyA = bodies[joint.bodyAId];
     RigidBody& bodyB = bodies[joint.bodyBId];
-    float dx = bodyA.x - bodyB.x;
-    float dy = bodyA.y - bodyB.y;
+    float dx = bodyA.pos.x - bodyB.pos.x;
+    float dy = bodyA.pos.y - bodyB.pos.y;
     float distance = pow((dx*dx)+(dy*dy), 0.5f);
     float x = distance-joint.length;
     if (abs(distance) < 0.1f) return;
@@ -134,14 +129,14 @@ void PhysicsWorld::UpdateDistanceJoint(DistanceJoint& joint, float dt){
     float bodyBaccl = -force/bodyB.mass;
     float bodyBacclX = bodyBaccl*(dx/distance);
     float bodyBacclY = bodyBaccl*(dy/distance);
-    bodyB.vx += bodyBacclX*dt;
-    bodyB.vy += bodyBacclY*dt;
+    bodyB.vel.x += bodyBacclX*dt;
+    bodyB.vel.y += bodyBacclY*dt;
     if (!joint.anchorA)
     {
         float bodyAaccl = force/bodyA.mass;
         float bodyAacclX = bodyAaccl*(dx/distance);
         float bodyAacclY = bodyAaccl*(dy/distance);
-        bodyA.vx += bodyAacclX*dt;
-        bodyA.vy += bodyAacclY*dt;
+        bodyA.vel.x += bodyAacclX*dt;
+        bodyA.vel.y += bodyAacclY*dt;
     }
 }

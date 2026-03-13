@@ -1,10 +1,12 @@
 #pragma once
 
+#include "structures/structures.h"
+
 class RigidBody {
 public:
-    float x, y;
-    float vx, vy;            
-    float width, height;     
+    vector2 pos;
+    vector2 vel;            
+    vector2 dimensions;     
     float mass;              
     float detail = 32;
     float angle = 0.0f;           
@@ -14,6 +16,7 @@ public:
     int gravityScale;
     bool anchor;
     int bodyType;
+    float energy;
     
     RigidBody(float x, float y, float vx, float vy, float width, float height, 
               float mass, float detail = 32, int gravityScale = 1, bool anchor = false);
@@ -21,6 +24,7 @@ public:
     // finds the effective length for air drag
     virtual float effectiveLength();
     virtual void setType();
+    float calculateEnergy(float gravity);
 };
 
 class RectangularBody : public RigidBody{

@@ -37,7 +37,7 @@ int main(void)
     rect1.bodyType = 1;
     int r1Id = world.AddBody(rect1);
     
-    RectangularBody rect2(68.0f, 40.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, 32.0f, .0f, false);
+    RectangularBody rect2(78.0f, 40.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, 32.0f, .0f, false);
     rect2.bodyType = 1;
     int r2Id = world.AddBody(rect2);
 
@@ -46,7 +46,8 @@ int main(void)
     double clock = 0;
     int frames = 0;
 
-    bool jointed = false;
+    DistanceJoint joint(5.0f, 9.8f, r1Id, r2Id, false, &world);
+    world.AddDistanceJoint(joint);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -57,11 +58,6 @@ int main(void)
         float dt = (float)(currentTime - lastTime);
         lastTime = currentTime;
         clock += dt;
-
-        if (!jointed && clock > 1.0f){
-            DistanceJoint joint(5.0f, 1.0f, r1Id, r2Id, false, &world);
-            world.AddDistanceJoint(joint);
-        }
 
         world.Update(dt, GRAVITY, DRAG_COEFF, BOUND_COR);
 
