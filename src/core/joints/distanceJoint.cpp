@@ -18,3 +18,10 @@ float DistanceJoint::calculateEnergy(vector2 pos1, vector2 pos2){
     energy = strength*x*x/2.0f;
     return energy;
 }
+
+vector2 DistanceJoint::getId(){
+    return vector2(bodyAId, bodyBId);
+}
+
+float DistanceJoint::getLength(){return length;}
+float DistanceJoint::getStrength(){return strength;}

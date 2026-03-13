@@ -12,9 +12,9 @@ void RotatePoint(float& px, float& py, float angle) {
     py = newY;
 }
 
-void GetRectCorners(const RigidBody& rect, float corners[4][2]) {
-    float halfW = rect.dimensions.x / 2.0f;
-    float halfH = rect.dimensions.y / 2.0f;
+void GetRectCorners(RigidBody& rect, float corners[4][2]) {
+    float halfW = rect.getDimensions().x / 2.0f;
+    float halfH = rect.getDimensions().y / 2.0f;
     
     corners[0][0] = -halfW; corners[0][1] = -halfH;
     corners[1][0] =  halfW; corners[1][1] = -halfH;
@@ -28,7 +28,7 @@ void GetRectCorners(const RigidBody& rect, float corners[4][2]) {
     }
 }
 
-void ProjectRectangle(const RigidBody& rect, float axisX, float axisY, float& min, float& max) {
+void ProjectRectangle(RigidBody& rect, float axisX, float axisY, float& min, float& max) {
     float corners[4][2];
     GetRectCorners(rect, corners);
     
@@ -41,7 +41,7 @@ void ProjectRectangle(const RigidBody& rect, float axisX, float axisY, float& mi
     }
 }
 
-bool CheckCollisionRectRect(const RigidBody& a, const RigidBody& b, ContactPoint* contact) {
+bool CheckCollisionRectRect(RigidBody& a, RigidBody& b, ContactPoint* contact) {
     float axes[4][2];
     
     axes[0][0] = cosf(a.angle); axes[0][1] = sinf(a.angle);
@@ -91,7 +91,7 @@ bool CheckCollisionRectRect(const RigidBody& a, const RigidBody& b, ContactPoint
     return true;
 }
 
-bool CheckCollisionEllipseEllipse(const RigidBody& a, const RigidBody& b, ContactPoint* contact) {
+bool CheckCollisionEllipseEllipse(RigidBody& a, RigidBody& b, ContactPoint* contact) {
     float dx = b.pos.x - a.pos.x;
     float dy = b.pos.y - a.pos.y;
     
@@ -102,10 +102,10 @@ bool CheckCollisionEllipseEllipse(const RigidBody& a, const RigidBody& b, Contac
     
     float relativeAngle = b.angle - a.angle;
     
-    float ax = a.dimensions.x / 2.0f;
-    float ay = a.dimensions.y / 2.0f;
-    float bx = b.dimensions.x / 2.0f;
-    float by = b.dimensions.y / 2.0f;
+    float ax = a.getDimensions().x / 2.0f;
+    float ay = a.getDimensions().y / 2.0f;
+    float bx = b.getDimensions().x / 2.0f;
+    float by = b.getDimensions().y / 2.0f;
     
     float dist = sqrtf(localBx * localBx + localBy * localBy);
     
@@ -131,7 +131,7 @@ bool CheckCollisionEllipseEllipse(const RigidBody& a, const RigidBody& b, Contac
     return false;
 }
 
-bool CheckCollisionRectEllipse(const RigidBody& rect, const RigidBody& ellipse, ContactPoint* contact) {
+bool CheckCollisionRectEllipse(RigidBody& rect, RigidBody& ellipse, ContactPoint* contact) {
     float localX = ellipse.pos.x - rect.pos.x;
     float localY = ellipse.pos.y - rect.pos.y;
     
@@ -142,8 +142,8 @@ bool CheckCollisionRectEllipse(const RigidBody& rect, const RigidBody& ellipse, 
     
     float relativeAngle = ellipse.angle - rect.angle;
     
-    float halfWidth = rect.dimensions.x / 2.0f;
-    float halfHeight = rect.dimensions.y / 2.0f;
+    float halfWidth = rect.getDimensions().x / 2.0f;
+    float halfHeight = rect.getDimensions().y / 2.0f;
     
     float closestX = fmaxf(-halfWidth, fminf(rotatedX, halfWidth));
     float closestY = fmaxf(-halfHeight, fminf(rotatedY, halfHeight));
@@ -156,8 +156,8 @@ bool CheckCollisionRectEllipse(const RigidBody& rect, const RigidBody& ellipse, 
     float ellipseLocalX = dx * ce - dy * se;
     float ellipseLocalY = dx * se + dy * ce;
     
-    float radiusX = ellipse.dimensions.x / 2.0f;
-    float radiusY = ellipse.dimensions.y / 2.0f;
+    float radiusX = ellipse.getDimensions().x / 2.0f;
+    float radiusY = ellipse.getDimensions().y / 2.0f;
     
     bool collision = ((ellipseLocalX * ellipseLocalX) / (radiusX * radiusX) + 
                      (ellipseLocalY * ellipseLocalY) / (radiusY * radiusY)) <= 1.0f;
@@ -185,21 +185,21 @@ bool CheckCollisionRectEllipse(const RigidBody& rect, const RigidBody& ellipse, 
     return collision;
 }
 
-bool CheckCollision(const RigidBody& a, const RigidBody& b, ContactPoint* contact) {
-    if (a.bodyType == 1 && b.bodyType == 1) {
+bool CheckCollision(RigidBody& a, RigidBody& b, ContactPoint* contact) {
+    if (a.getType() == 1 && b.getType() == 1) {
         return CheckCollisionRectRect(a, b, contact);
     }
-    else if (a.bodyType == 2 && b.bodyType == 2) {
+    else if (a.getType() == 2 && b.getType() == 2) {
         return CheckCollisionEllipseEllipse(a, b, contact);
     }
-    else if ((a.bodyType == 1 && b.bodyType == 2) || 
-             (a.bodyType == 2 && b.bodyType == 1)) {
-        const RigidBody& rect = (a.bodyType == 1) ? a : b;
-        const RigidBody& ellipse = (a.bodyType == 2) ? a : b;
+    else if ((a.getType() == 1 && b.getType() == 2) || 
+             (a.getType() == 2 && b.getType() == 1)) {
+        RigidBody& rect = (a.getType() == 1) ? a : b;
+        RigidBody& ellipse = (a.getType() == 2) ? a : b;
         bool result = CheckCollisionRectEllipse(rect, ellipse, contact);
         
         // Flip normal if order was reversed
-        if (contact && a.bodyType == 2) {
+        if (contact && a.getType() == 2) {
             contact->nx = -contact->nx;
             contact->ny = -contact->ny;
         }
@@ -226,8 +226,8 @@ void ResolveCollision(RigidBody& a, RigidBody& b, const ContactPoint& contact, f
     float velAlongNormal = rvx * nx + rvy * ny;
     if (velAlongNormal > 0) return;
 
-    float invMassA = (a.mass > 0) ? 1.0f / a.mass : 0.0f;
-    float invMassB = (b.mass > 0) ? 1.0f / b.mass : 0.0f;
+    float invMassA = (a.getMass() > 0) ? 1.0f / a.getMass() : 0.0f;
+    float invMassB = (b.getMass() > 0) ? 1.0f / b.getMass() : 0.0f;
     float invInertiaA = (a.momentOfInertia > 0) ? 1.0f / a.momentOfInertia : 0.0f;
     float invInertiaB = (b.momentOfInertia > 0) ? 1.0f / b.momentOfInertia : 0.0f;
 

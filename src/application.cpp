@@ -34,11 +34,9 @@ int main(void)
     PhysicsWorld world;
     
     RectangularBody rect1(64.0f, 35.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, 32.0f, .0f, false);
-    rect1.bodyType = 1;
     int r1Id = world.AddBody(rect1);
     
     RectangularBody rect2(78.0f, 40.0f, 0.0f, 0.0f, 2.0f, 2.0f, 5.0f, 32.0f, .0f, false);
-    rect2.bodyType = 1;
     int r2Id = world.AddBody(rect2);
 
     double lastTime = glfwGetTime(); // get time

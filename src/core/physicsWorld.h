@@ -10,21 +10,23 @@ struct DistanceJoint;
 
 class PhysicsWorld {
 public:
-    std::vector<RigidBody> bodies;
-    std::vector<DistanceJoint> distanceJoints;
+    float energy;
 
     PhysicsWorld();
     ~PhysicsWorld();
 
     int AddBody(const RigidBody& body);
     void AddDistanceJoint(const DistanceJoint& joint);
-    void Update(float dt, float gravity, float viscosity, float boundCor);
-    void Render();
     void SetAnchor(int id, bool anchor = true);
+    void Render();
     float CalculateTotalEnergy(float gravity);
-
+    void Update(float dt, float gravity, float viscosity, float boundCor);
+    
 private:
-    void RenderBody(const RigidBody& body);
+    std::vector<RigidBody> bodies;
+    std::vector<DistanceJoint> distanceJoints;
+    
+    void RenderBody(RigidBody& body);
     void UpdatePhysics(RigidBody& body, float dt, float gravity, float viscosity, float boundCor);
     void UpdateDistanceJoint(DistanceJoint& joint, float dt);
 

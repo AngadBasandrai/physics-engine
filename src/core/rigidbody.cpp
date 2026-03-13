@@ -6,12 +6,28 @@ RigidBody::RigidBody(float x, float y, float vx, float vy, float width, float he
         : pos(vector2(x, y)), vel(vector2(vx, vy)), dimensions(vector2(width, height)), 
           mass(mass), detail(detail), angle(0.0f), angularVelocity(0.0f), gravityScale(gravityScale){
         CalculateMomentOfInertia();
+    }
+
+RectangularBody::RectangularBody(float x, float y, float vx, float vy, float width, float height, 
+              float mass, float detail, int gravityScale, bool anchor)
+        : RigidBody(x,y,vx,vy,width,height,mass,detail,gravityScale,anchor){
         setType();
     }
-    
+
+EllipticalBody::EllipticalBody(float x, float y, float vx, float vy, float width, float height, 
+              float mass, float detail, int gravityScale, bool anchor)
+        : RigidBody(x,y,vx,vy,width,height,mass,detail,gravityScale,anchor){
+        setType();
+    }
+
 void RigidBody::CalculateMomentOfInertia() {
     momentOfInertia = mass * (dimensions.x*dimensions.x + dimensions.y*dimensions.y);
 }
+
+vector2 RigidBody::getDimensions(){return dimensions;}
+float RigidBody::getDetail(){return detail;}
+float RigidBody::getMass(){return mass;}
+int RigidBody::getType(){return bodyType;}
 
 float RigidBody::calculateEnergy(float gravity){
     float vSquared = vel.x * vel.x + vel.y * vel.y;
